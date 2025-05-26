@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Calendar, Weight, Dumbbell, Pill, Coffee, Save, X, ChevronDown, ChevronUp, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Edit3, Calendar, Weight, Dumbbell, Pill, Coffee, Save, X, ChevronDown, ChevronUp, Loader2, AlertCircle, Copy, Check, Target, Zap, Apple } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -11,6 +11,7 @@ const MealPlanner = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
   const [formData, setFormData] = useState({
     date: '',
     weight: '',
@@ -134,6 +135,54 @@ const MealPlanner = () => {
       return { success: false, message: 'Failed to update meal plan' };
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Copy meal plan to clipboard
+  const copyMealPlan = async (record) => {
+    const mealText = `
+🗓️ Date: ${record.date}
+⚖️ Weight: ${record.weight} kg
+${record.workout ? '💪 Workout Day' : '🛋️ Rest Day'}
+${record.creatine ? '💊 Creatine ✓' : ''}
+${record.whey ? '🥤 Whey Protein ✓' : ''}
+
+🍳 BREAKFAST: ${record.breakfast || 'Not specified'}
+
+🍎 MORNING SNACK: ${record.morningSnack || 'Not specified'}
+
+🍽️ LUNCH: ${record.lunch || 'Not specified'}
+
+⚡ PRE-WORKOUT: ${record.preWorkout || 'Not specified'}
+
+🏋️ POST-WORKOUT: ${record.postWorkout || 'Not specified'}
+
+🍛 DINNER: ${record.dinner || 'Not specified'}
+
+🌙 BEDTIME SNACK: ${record.bedtimeSnack || 'Not specified'}
+
+📊 NUTRITION:
+${record.calories ? `• Calories: ${record.calories} kcal` : ''}
+${record.protein ? `• Protein: ${record.protein}g` : ''}
+
+${record.notes ? `📝 NOTES: ${record.notes}` : ''}
+`.trim();
+
+    try {
+      await navigator.clipboard.writeText(mealText);
+      setCopiedId(record.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = mealText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopiedId(record.id);
+      setTimeout(() => setCopiedId(null), 2000);
     }
   };
 
@@ -264,14 +313,15 @@ const MealPlanner = () => {
 
   if (showForm) {
     return (
-      <div className="min-h-screen bg-gray-50 px-3 py-4 sm:p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 px-3 py-4 sm:p-4">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Target className="w-5 h-5 text-orange-500" />
                 {editingId ? 'Edit Meal Record' : 'New Meal Record'}
               </h2>
-              <button onClick={handleCancel} className="p-2 hover:bg-gray-100 rounded-full">
+              <button onClick={handleCancel} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -287,56 +337,65 @@ const MealPlanner = () => {
               {/* Basic Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Date *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                    <Calendar className="w-4 h-4 text-blue-500" />
+                    Date *
+                  </label>
                   <input
                     type="text"
                     placeholder="DD/MM/YYYY"
                     value={formData.date}
                     onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm sm:text-base transition-colors"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Weight (kg) *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                    <Weight className="w-4 h-4 text-green-500" />
+                    Weight (kg) *
+                  </label>
                   <input
                     type="text"
                     placeholder="59.3"
                     value={formData.weight}
                     onChange={(e) => setFormData({...formData, weight: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm sm:text-base transition-colors"
                     required
                   />
                 </div>
                 <div className="sm:col-span-2 lg:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Supplements</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Activity & Supplements</label>
                   <div className="flex flex-wrap gap-3">
-                    <label className="flex items-center space-x-2">
+                    <label className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
                       <input
                         type="checkbox"
                         checked={formData.workout}
                         onChange={(e) => setFormData({...formData, workout: e.target.checked})}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
                       />
-                      <span className="text-sm text-gray-700">Workout</span>
+                      <Dumbbell className="w-4 h-4 text-orange-500" />
+                      <span className="text-sm text-gray-700 font-medium">Workout</span>
                     </label>
-                    <label className="flex items-center space-x-2">
+                    <label className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
                       <input
                         type="checkbox"
                         checked={formData.creatine}
                         onChange={(e) => setFormData({...formData, creatine: e.target.checked})}
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">Creatine</span>
+                      <Pill className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm text-gray-700 font-medium">Creatine</span>
                     </label>
-                    <label className="flex items-center space-x-2">
+                    <label className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
                       <input
                         type="checkbox"
                         checked={formData.whey}
                         onChange={(e) => setFormData({...formData, whey: e.target.checked})}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                       />
-                      <span className="text-sm text-gray-700">Whey</span>
+                      <Coffee className="w-4 h-4 text-purple-500" />
+                      <span className="text-sm text-gray-700 font-medium">Whey</span>
                     </label>
                   </div>
                 </div>
@@ -344,27 +403,30 @@ const MealPlanner = () => {
 
               {/* Meals */}
               <div className="space-y-4">
-                <h3 className="text-base sm:text-lg font-medium text-gray-800">Meals</h3>
+                <h3 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <Apple className="w-5 h-5 text-red-500" />
+                  Daily Meals
+                </h3>
                 
                 {[
-                  { key: 'breakfast', label: 'Breakfast (B)', icon: Coffee },
-                  { key: 'morningSnack', label: 'Morning Snack (MS)', icon: Coffee },
-                  { key: 'lunch', label: 'Lunch (L)', icon: Coffee },
-                  { key: 'preWorkout', label: 'Pre-Workout (PreW)', icon: Dumbbell },
-                  { key: 'postWorkout', label: 'Post-Workout (PostW)', icon: Dumbbell },
-                  { key: 'dinner', label: 'Dinner (D)', icon: Coffee },
-                  { key: 'bedtimeSnack', label: 'Bedtime Snack (BB)', icon: Coffee }
-                ].map(({ key, label, icon: Icon }) => (
+                  { key: 'breakfast', label: 'Breakfast (B)', icon: Coffee, color: 'text-amber-500' },
+                  { key: 'morningSnack', label: 'Morning Snack (MS)', icon: Apple, color: 'text-green-500' },
+                  { key: 'lunch', label: 'Lunch (L)', icon: Coffee, color: 'text-orange-500' },
+                  { key: 'preWorkout', label: 'Pre-Workout (PreW)', icon: Zap, color: 'text-yellow-500' },
+                  { key: 'postWorkout', label: 'Post-Workout (PostW)', icon: Dumbbell, color: 'text-red-500' },
+                  { key: 'dinner', label: 'Dinner (D)', icon: Coffee, color: 'text-purple-500' },
+                  { key: 'bedtimeSnack', label: 'Bedtime Snack (BB)', icon: Apple, color: 'text-indigo-500' }
+                ].map(({ key, label, icon: Icon, color }) => (
                   <div key={key}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <Icon className="w-4 h-4" />
+                    <label className={`block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2`}>
+                      <Icon className={`w-4 h-4 ${color}`} />
                       {label}
                     </label>
                     <textarea
                       value={formData[key]}
                       onChange={(e) => setFormData({...formData, [key]: e.target.value})}
                       placeholder={placeholders[key]}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none text-sm sm:text-base transition-colors"
                       rows="2"
                     />
                   </div>
@@ -374,35 +436,41 @@ const MealPlanner = () => {
               {/* Nutrition */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Approx Calories (kcal)</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                    <Zap className="w-4 h-4 text-yellow-500" />
+                    Approx Calories (kcal)
+                  </label>
                   <input
                     type="text"
                     placeholder="2380"
                     value={formData.calories}
                     onChange={(e) => setFormData({...formData, calories: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm sm:text-base transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Protein Estimate (g)</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                    <Target className="w-4 h-4 text-red-500" />
+                    Protein Estimate (g)
+                  </label>
                   <input
                     type="text"
                     placeholder="132"
                     value={formData.protein}
                     onChange={(e) => setFormData({...formData, protein: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm sm:text-base transition-colors"
                   />
                 </div>
               </div>
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Notes</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
                   placeholder="Energy good. Felt full. Need to add more fats maybe."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none text-sm sm:text-base transition-colors"
                   rows="3"
                 />
               </div>
@@ -412,7 +480,7 @@ const MealPlanner = () => {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 disabled:from-gray-400 disabled:to-gray-400 transition-all flex items-center justify-center gap-2 text-sm sm:text-base font-semibold shadow-lg"
                 >
                   {saving ? (
                     <>
@@ -429,7 +497,7 @@ const MealPlanner = () => {
                 <button
                   onClick={handleCancel}
                   disabled={saving}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:bg-gray-50 transition-colors text-sm sm:text-base"
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:bg-gray-50 transition-colors text-sm sm:text-base font-medium"
                 >
                   Cancel
                 </button>
@@ -442,19 +510,22 @@ const MealPlanner = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Meal Planner</h1>
-              <p className="text-gray-600 text-sm sm:text-base">Track your daily nutrition and progress</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Dumbbell className="w-6 h-6 text-orange-500" />
+                Meal Planner
+              </h1>
+              <p className="text-gray-600 text-sm sm:text-base">Track your daily nutrition and fitness progress</p>
             </div>
             <button
               onClick={handleNewRecord}
               disabled={loading}
-              className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors flex items-center gap-2 text-sm sm:text-base"
+              className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 disabled:from-gray-400 disabled:to-gray-400  flex items-center gap-2 text-sm sm:text-base font-semibold shadow-lg"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">New Record</span>
@@ -468,7 +539,7 @@ const MealPlanner = () => {
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
             <span className="ml-2 text-gray-600">Loading meal plans...</span>
           </div>
         )}
@@ -493,63 +564,83 @@ const MealPlanner = () => {
         {/* Recent Records (Last 3 days) */}
         {!loading && mealRecords.length > 0 && (
           <div className="mb-6 sm:mb-8">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Recent Records</h2>
+            <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <Target className="w-5 h-5 text-green-500" />
+              Recent Records
+            </h2>
             <div className="space-y-3 sm:space-y-4">
               {getRecentRecords().map((record) => (
-                <div key={record.id} className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+                <div key={record.id} className="bg-white rounded-xl shadow-md border border-gray-200 p-4 sm:p-6 hover:shadow-lg transition-shadow">
                   <div className="flex items-start justify-between mb-3 sm:mb-4">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-gray-500" />
-                        <span className="font-medium text-gray-900 text-sm sm:text-base">{formatDate(record.date)}</span>
+                        <Calendar className="w-4 h-4 text-blue-500" />
+                        <span className="font-bold text-gray-900 text-sm sm:text-base">{formatDate(record.date)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Weight className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-700 text-sm sm:text-base">{record.weight} kg</span>
+                        <Weight className="w-4 h-4 text-green-500" />
+                        <span className="text-gray-700 text-sm sm:text-base font-medium">{record.weight} kg</span>
                       </div>
                       <div className="flex flex-wrap gap-1 sm:gap-2">
-                        {record.workout && <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs"><Dumbbell className="w-3 h-3" />Workout</div>}
-                        {record.creatine && <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"><Pill className="w-3 h-3" />Creatine</div>}
-                        {record.whey && <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs"><Coffee className="w-3 h-3" />Whey</div>}
+                        {record.workout && <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium"><Dumbbell className="w-3 h-3" />Workout</div>}
+                        {record.creatine && <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"><Pill className="w-3 h-3" />Creatine</div>}
+                        {record.whey && <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium"><Coffee className="w-3 h-3" />Whey</div>}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 sm:gap-2">
                       <button
+                        onClick={() => copyMealPlan(record)}
+                        className="p-1.5 sm:p-2 hover:bg-green-100 rounded-full transition-colors"
+                        title="Copy meal plan"
+                      >
+                        {copiedId === record.id ? (
+                          <Check className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <Copy className="w-4 h-4 text-gray-500 hover:text-green-600" />
+                        )}
+                      </button>
+                      <button
                         onClick={() => setExpandedRecord(expandedRecord === record.id ? null : record.id)}
-                        className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full"
+                        className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
                       >
                         {expandedRecord === record.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={() => handleEdit(record)}
-                        className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full"
+                        className="p-1.5 sm:p-2 hover:bg-blue-100 rounded-full transition-colors"
                       >
-                        <Edit3 className="w-4 h-4 text-gray-500" />
+                        <Edit3 className="w-4 h-4 text-gray-500 hover:text-blue-600" />
                       </button>
                     </div>
                   </div>
 
                   {expandedRecord === record.id && (
-                    <div className="space-y-3 pt-3 sm:pt-4 border-t">
+                    <div className="space-y-3 pt-3 sm:pt-4 border-t border-gray-100">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div>
-                          <h4 className="font-medium text-gray-800 mb-2 text-sm sm:text-base">Meals</h4>
+                          <h4 className="font-bold text-gray-800 mb-2 text-sm sm:text-base flex items-center gap-2">
+                            <Apple className="w-4 h-4 text-red-500" />
+                            Meals
+                          </h4>
                           <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-                            {record.breakfast && <div><span className="font-medium">B:</span> {record.breakfast}</div>}
-                            {record.morningSnack && <div><span className="font-medium">MS:</span> {record.morningSnack}</div>}
-                            {record.lunch && <div><span className="font-medium">L:</span> {record.lunch}</div>}
-                            {record.preWorkout && <div><span className="font-medium">PreW:</span> {record.preWorkout}</div>}
-                            {record.postWorkout && <div><span className="font-medium">PostW:</span> {record.postWorkout}</div>}
-                            {record.dinner && <div><span className="font-medium">D:</span> {record.dinner}</div>}
-                            {record.bedtimeSnack && <div><span className="font-medium">BB:</span> {record.bedtimeSnack}</div>}
+                            {record.breakfast && <div><span className="font-semibold text-amber-600">B:</span> {record.breakfast}</div>}
+                            {record.morningSnack && <div><span className="font-semibold text-green-600">MS:</span> {record.morningSnack}</div>}
+                            {record.lunch && <div><span className="font-semibold text-orange-600">L:</span> {record.lunch}</div>}
+                            {record.preWorkout && <div><span className="font-semibold text-yellow-600">PreW:</span> {record.preWorkout}</div>}
+                            {record.postWorkout && <div><span className="font-semibold text-red-600">PostW:</span> {record.postWorkout}</div>}
+                            {record.dinner && <div><span className="font-semibold text-purple-600">D:</span> {record.dinner}</div>}
+                            {record.bedtimeSnack && <div><span className="font-semibold text-indigo-600">BB:</span> {record.bedtimeSnack}</div>}
                           </div>
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-800 mb-2 text-sm sm:text-base">Nutrition & Notes</h4>
+                          <h4 className="font-bold text-gray-800 mb-2 text-sm sm:text-base flex items-center gap-2">
+                            <Target className="w-4 h-4 text-blue-500" />
+                            Nutrition & Notes
+                          </h4>
                           <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-                            {record.calories && <div><span className="font-medium">Calories:</span> {record.calories} kcal</div>}
-                            {record.protein && <div><span className="font-medium">Protein:</span> {record.protein}g</div>}
-                            {record.notes && <div><span className="font-medium">Notes:</span> {record.notes}</div>}
+                            {record.calories && <div className="flex items-center gap-2"><Zap className="w-3 h-3 text-yellow-500" /><span className="font-semibold">Calories:</span> {record.calories} kcal</div>}
+                            {record.protein && <div className="flex items-center gap-2"><Target className="w-3 h-3 text-red-500" /><span className="font-semibold">Protein:</span> {record.protein}g</div>}
+                            {record.notes && <div><span className="font-semibold">Notes:</span> {record.notes}</div>}
                           </div>
                         </div>
                       </div>
@@ -558,8 +649,8 @@ const MealPlanner = () => {
 
                   {expandedRecord !== record.id && (
                     <div className="flex flex-wrap gap-3 sm:gap-6 text-xs sm:text-sm text-gray-600">
-                      {record.calories && <span>{record.calories} kcal</span>}
-                      {record.protein && <span>{record.protein}g protein</span>}
+                      {record.calories && <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-yellow-500" />{record.calories} kcal</span>}
+                      {record.protein && <span className="flex items-center gap-1"><Target className="w-3 h-3 text-red-500" />{record.protein}g protein</span>}
                     </div>
                   )}
                 </div>
@@ -571,23 +662,46 @@ const MealPlanner = () => {
         {/* Older Records */}
         {!loading && getOlderRecords().length > 0 && (
           <div>
-            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Previous Records</h2>
-            <div className="bg-white rounded-lg shadow-sm border">
+            <h2 className="text-base sm:text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-gray-500" />
+              Previous Records
+            </h2>
+            <div className="bg-white rounded-xl shadow-md border border-gray-200">
               {getOlderRecords().map((record, index) => (
-                <div key={record.id} className={`flex items-center justify-between p-3 sm:p-4 ${index !== getOlderRecords().length - 1 ? 'border-b' : ''}`}>
+                <div key={record.id} className={`flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors ${index !== getOlderRecords().length - 1 ? 'border-b border-gray-100' : ''}`}>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                    <span className="font-medium text-gray-900 text-sm sm:text-base">{formatDate(record.date)}</span>
+                    <span className="font-bold text-gray-900 text-sm sm:text-base">{formatDate(record.date)}</span>
                     <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
-                      <span className="text-gray-600">{record.weight} kg</span>
-                      {record.calories && <span className="text-gray-500">{record.calories} kcal</span>}
+                      <span className="text-gray-600 flex items-center gap-1">
+                        <Weight className="w-3 h-3 text-green-500" />
+                        {record.weight} kg
+                      </span>
+                      {record.calories && <span className="text-gray-500 flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-yellow-500" />
+                        {record.calories} kcal
+                      </span>}
+                      {record.workout && <Dumbbell className="w-3 h-3 text-orange-500" />}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleEdit(record)}
-                    className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full"
-                  >
-                    <Edit3 className="w-4 h-4 text-gray-500" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => copyMealPlan(record)}
+                      className="p-1.5 sm:p-2 hover:bg-green-100 rounded-full transition-colors"
+                      title="Copy meal plan"
+                    >
+                      {copiedId === record.id ? (
+                        <Check className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-400 hover:text-green-600" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleEdit(record)}
+                      className="p-1.5 sm:p-2 hover:bg-blue-100 rounded-full transition-colors"
+                    >
+                      <Edit3 className="w-4 h-4 text-gray-400 hover:text-blue-600" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -597,12 +711,14 @@ const MealPlanner = () => {
         {/* Empty State */}
         {!loading && mealRecords.length === 0 && !error && (
           <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No meal records yet</h3>
+            <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Dumbbell className="w-10 h-10 text-orange-500" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">No meal records yet</h3>
             <p className="text-gray-600 mb-4 text-sm sm:text-base px-4">Start tracking your meals and nutrition by creating your first record.</p>
             <button
               onClick={handleNewRecord}
-              className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2 text-sm sm:text-base"
+              className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all inline-flex items-center gap-2 text-sm sm:text-base font-semibold shadow-lg"
             >
               <Plus className="w-4 h-4" />
               Create First Record
